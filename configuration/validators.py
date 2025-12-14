@@ -1,10 +1,11 @@
 
 from db_schema import Role
+from core.session_manager import SessionManager
 
-def validate_role_hierarchy(db):
+def validate_role_hierarchy():
     """Sprawdza czy role nie tworzą cykli w hierarchii."""
+    db = SessionManager.get_session()
     roles = db.query(Role).all()
-    visited = set()
 
     def dfs(role, path):
         if role.id in path:

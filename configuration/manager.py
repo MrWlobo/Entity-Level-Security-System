@@ -1,10 +1,10 @@
-# configuration/manager.py
-from config import get_db
-from db_schema import User, Role, Permission, UserRole
+
+from configuration.db_schema import User, Role, Permission, UserRole
+from core.session_manager import SessionManager
 
 class UserManager:
     def create_user(self, username, password_hash, email):
-        db = next(get_db())
+        db = SessionManager.get_session()
         user = User(username=username, password_hash=password_hash, email=email)
         db.add(user)
         db.commit()
@@ -12,14 +12,14 @@ class UserManager:
 
 class RoleManager:
     def create_role(self, name, description=None, parent_role_id=None):
-        db = next(get_db())
+        db = SessionManager.get_session()
         role = Role(name=name, description=description, parent_role_id=parent_role_id)
         db.add(role)
         db.commit()
         return role
 
     def assign_role(self, user_id, role_id):
-        db = next(get_db())
+        db = SessionManager.get_session()
         user_role = UserRole(user_id=user_id, role_id=role_id)
         db.add(user_role)
         db.commit()
@@ -27,7 +27,7 @@ class RoleManager:
 
 class PermissionManager:
     def grant_permission(self, grantee_type, grantee_id, table_name, action, access_type, row_ids=None):
-        db = next(get_db())
+        db = SessionManager.get_session()
         perm = Permission(
             grantee_type=grantee_type,
             grantee_id=grantee_id,

@@ -34,10 +34,10 @@ class UserRole(Base):
 class Permission(Base):
     __tablename__ = "permissions"
     id = Column(Integer, primary_key=True, index=True)
-    grantee_type = Column(String(50))   
-    grantee_id = Column(Integer)        
+    grantee_type = Column(String(50))   # "user" lub "role"
+    grantee_id = Column(Integer)        # id użytkownika lub roli
     table_name = Column(String(255))
-    action = Column(String(50))         
-    access_type = Column(String(50))    
-    row_ids = Column(Text, nullable=True)  
+    action = Column(String(50))         # SELECT / UPDATE / DELETE / INSERT
+    access_type = Column(String(50))    # WHITELIST / BLACKLIST
+    row_ids = Column(Text, nullable=True)
     version = Column(Integer, default=1)
