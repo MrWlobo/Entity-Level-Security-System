@@ -1,7 +1,7 @@
 # configuration/db_schema.py
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Text
 from sqlalchemy.orm import relationship
-from config import Base
+from .config import Base
 
 class User(Base):
     __tablename__ = "users"
