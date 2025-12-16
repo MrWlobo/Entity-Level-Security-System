@@ -1,6 +1,6 @@
 from typing import Iterator, Tuple
 import re
-from core.session_manager import *
+from core.session_manager import BaseManager, CurrentUserContext
 from runtime_modifier.filter_generator import FilterGenerator
 
 
@@ -19,18 +19,6 @@ class QueryModifier:
             if cls_name in orm_classes:
                 yield m.start(), m.end(), cls_name
 
-    @staticmethod
-    def remove_commit_calls_str(code: str) -> str:
-
-        lines = code.splitlines()
-        new_lines = []
-        for line in lines:
-            stripped = line.strip()
-            if stripped.endswith(".commit()"):
-                continue
-            else:
-                new_lines.append(line)
-        return "\n".join(new_lines)
 
     @staticmethod
     def modify_function(code: str):
@@ -52,7 +40,7 @@ class QueryModifier:
                 code = code[:start] + f"{keyword}({cls}).where({filter_dict})" + code[end:]
 
         """
-        Checking insert permissions
+            Checking insert permissions
         """
         matches_insert = list(QueryModifier.find("insert", code, all_orm_classes))
         for start, end, cls in reversed(matches_insert):
@@ -61,5 +49,4 @@ class QueryModifier:
             if not can_insert:
                 raise PermissionError()
 
-        code = QueryModifier.remove_commit_calls_str(code)
         return code

@@ -21,11 +21,8 @@ class TestUser(Base):
         self.name = name
         self.salary = salary
 
+
 @secure
-def test_fn():
-    print("test_fn")
-
-
 def test_select():
 
     users = session.query(TestUser).all()
@@ -37,7 +34,7 @@ def test_update():
 
     stmt = (
         update(TestUser)
-        .where(TestUser.id == 3)
+        .where(TestUser.id == 8)
         .values(salary=6700)
     )
     session.execute(stmt)
@@ -48,16 +45,15 @@ def test_delete():
 
     stmt = (
         delete(TestUser)
-        .where(TestUser.id == 3)
+        .where(TestUser.id == 1)
     )
     session.execute(stmt)
     session.commit()
 
-def test_insert():
+def test_insert(id):
 
     stmt = insert(TestUser).values([
-        {"id": 1, "name": "Anna", "salary": 3000},
-       {"id": 3, "name": "Andrzej", "salary": 4000}
+        {"id": id, "name": "Anna", "salary": 3000}
     ])
 
     session.execute(stmt)
@@ -73,6 +69,11 @@ def create():
 
 @secure
 def test_update_orm():
+    stmt = select(TestUser).where(TestUser.id == 2)
+    user = session.execute(stmt).scalar_one()
+    user.name = "Ola"
+    session.add(user)
+    session.commit()
     stmt = select(TestUser).where(TestUser.id == 1)
     user = session.execute(stmt).scalar_one()
     user.name = "Maciek"
@@ -80,19 +81,19 @@ def test_update_orm():
     session.commit()
 
 @secure
-def test_delete_orm():
-    stmt = select(TestUser).where(TestUser.id == 3)
+def test_delete_orm(id):
+    stmt = select(TestUser).where(TestUser.id == id)
     user1 = session.execute(stmt).scalar_one()
     session.delete(user1)
     session.commit()
-    stmt = select(TestUser).where(TestUser.id == 1)
+    stmt = select(TestUser).where(TestUser.id == 7)
     user2 = session.execute(stmt).scalar_one()
     session.delete(user2)
     session.commit()
 
 @secure
 def test_insert_orm():
-    new_user = TestUser("Monika", 1600)
+    new_user = TestUser("Monika2", 1600)
     session.add(new_user)
     session.commit()
 
@@ -101,5 +102,4 @@ if __name__ == "__main__":
     session = Session(engine)
     SessionManager.set_session(session)
     BaseManager.set_base(Base)
-    test_delete_orm()
     test_select()
