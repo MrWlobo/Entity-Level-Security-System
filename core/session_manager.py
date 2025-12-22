@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 
 from configuration.db_schema import User
-from .context import _current_user, _current_session, _current_base
+from .context import _current_user, _current_session, _current_base, _filters_activated
 
 class CurrentUserContext:
 
@@ -31,7 +31,7 @@ class SessionManager:
         original_commit = session.commit
 
         def modified_commit():
-            SessionManager.check_changes_before_commit(session)
+            if _filters_activated.get(): SessionManager.check_changes_before_commit(session)
             original_commit()
 
         session.commit = modified_commit
@@ -51,7 +51,7 @@ class SessionManager:
         for obj in list(session.dirty):
             cls = str(type(obj))
             #ids = PermissionResolver.get_accessible_row_ids(user_id, cls ,"INSERT")
-            ids = [1,2]
+            ids = [1,2,3]
             if hasattr(obj, "id") and obj.id not in ids:
                 session.expunge(obj)
 

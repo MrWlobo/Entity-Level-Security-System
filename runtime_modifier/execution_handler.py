@@ -2,7 +2,7 @@ from typing import Callable
 import ast, astor
 from runtime_modifier.query_modifier import QueryModifier
 from sqlalchemy.orm.exc import NoResultFound
-
+from core.context import _filters_activated
 
 class ExecutionHandler:
 
@@ -44,7 +44,9 @@ class ExecutionHandler:
 
         def wrapper(*args, **kwargs):
             try:
+                _filters_activated.set(True)
                 result = new_func(*args, **kwargs)
+                _filters_activated.set(False)
             except NoResultFound:
                 raise PermissionError("You don't have access to desired rows")
             return result

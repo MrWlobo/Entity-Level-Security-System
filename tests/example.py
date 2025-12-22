@@ -21,8 +21,6 @@ class TestUser(Base):
         self.name = name
         self.salary = salary
 
-
-@secure
 def test_select():
 
     users = session.query(TestUser).all()
@@ -50,10 +48,11 @@ def test_delete():
     session.execute(stmt)
     session.commit()
 
-def test_insert(id):
+def test_insert():
 
     stmt = insert(TestUser).values([
-        {"id": id, "name": "Anna", "salary": 3000}
+        {"id": 1, "name": "Anna", "salary": 3000},
+        {"id": 3, "name": "Jonasz", "salary": 5000},
     ])
 
     session.execute(stmt)
@@ -69,24 +68,24 @@ def create():
 
 @secure
 def test_update_orm():
-    stmt = select(TestUser).where(TestUser.id == 2)
+    stmt = select(TestUser).where(TestUser.id == 3)
     user = session.execute(stmt).scalar_one()
-    user.name = "Ola"
+    user.name = "Jonasz"
     session.add(user)
     session.commit()
-    stmt = select(TestUser).where(TestUser.id == 1)
+    stmt = select(TestUser).where(TestUser.id == 8)
     user = session.execute(stmt).scalar_one()
-    user.name = "Maciek"
+    user.name = "Danuta"
     session.add(user)
     session.commit()
 
 @secure
-def test_delete_orm(id):
-    stmt = select(TestUser).where(TestUser.id == id)
+def test_delete_orm():
+    stmt = select(TestUser).where(TestUser.id == 3)
     user1 = session.execute(stmt).scalar_one()
     session.delete(user1)
     session.commit()
-    stmt = select(TestUser).where(TestUser.id == 7)
+    stmt = select(TestUser).where(TestUser.id == 2)
     user2 = session.execute(stmt).scalar_one()
     session.delete(user2)
     session.commit()
@@ -102,4 +101,5 @@ if __name__ == "__main__":
     session = Session(engine)
     SessionManager.set_session(session)
     BaseManager.set_base(Base)
+    test_update_orm()
     test_select()
