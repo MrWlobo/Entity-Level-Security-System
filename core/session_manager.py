@@ -1,5 +1,7 @@
 from sqlalchemy.orm import Session
 
+from access_control.access_checker import AccessChecker
+from access_control.permission_resolver import PermissionResolver
 from configuration.db_schema import User
 from .context import _current_user, _current_session, _current_base, _filters_activated
 
@@ -46,28 +48,26 @@ class SessionManager:
     """
     @staticmethod
     def check_changes_before_commit(session):
+        current_user = CurrentUserContext.get_current_user()
 
         # UPDATE
         for obj in list(session.dirty):
             cls = str(type(obj))
-            #ids = PermissionResolver.get_accessible_row_ids(user_id, cls ,"INSERT")
-            ids = [1,2,3]
+            ids = PermissionResolver.get_accessible_row_ids(current_user.id, cls, "UPDATE")
             if hasattr(obj, "id") and obj.id not in ids:
                 session.expunge(obj)
 
         # DELETE
         for obj in list(session.deleted):
             cls = str(type(obj))
-            # ids = PermissionResolver.get_accessible_row_ids(user_id, cls ,"DELETE")
-            ids = [1, 2]
+            ids = PermissionResolver.get_accessible_row_ids(current_user.id, cls, "DELETE")
             if hasattr(obj, "id") and obj.id not in ids:
                 session.expunge(obj)
 
         # INSERT
         for obj in list(session.new):
             cls = str(type(obj))
-            #can_insert = AccessChecker.can_insert(user_id, cls)
-            can_insert = True
+            can_insert = AccessChecker.can_insert(current_user.id, cls)
             if hasattr(obj, "id") and not can_insert:
                 session.expunge(obj)
 

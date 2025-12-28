@@ -1,5 +1,6 @@
 from typing import Iterator, Tuple
 import re
+from access_control.access_checker import AccessChecker
 from core.session_manager import BaseManager, CurrentUserContext
 from runtime_modifier.filter_generator import FilterGenerator
 
@@ -44,8 +45,7 @@ class QueryModifier:
         """
         matches_insert = list(QueryModifier.find("insert", code, all_orm_classes))
         for start, end, cls in reversed(matches_insert):
-            #can_insert = AccessChecker.can_insert(current_user.id, cls)
-            can_insert = False
+            can_insert = AccessChecker.can_insert(current_user.id, cls)
             if not can_insert:
                 raise PermissionError()
 
