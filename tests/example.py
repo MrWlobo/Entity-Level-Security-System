@@ -1,5 +1,6 @@
+from access_control.strategies.BlacklistStrategy import BlacklistStrategy
 from configuration.db_schema import User
-from core.session_manager import CurrentUserContext, SessionManager, BaseManager
+from core.session_manager import CurrentUserContext, SessionManager, BaseManager, StrategyManager
 from runtime_modifier.decorator import secure
 from sqlalchemy.orm import Session
 from sqlalchemy import create_engine, Column, Integer, String, Float
@@ -21,6 +22,7 @@ class TestUser(Base):
         self.name = name
         self.salary = salary
 
+@secure
 def test_select():
 
     users = session.query(TestUser).all()
@@ -33,7 +35,7 @@ def test_update():
     stmt = (
         update(TestUser)
         .where(TestUser.id == 8)
-        .values(salary=6700)
+        .values(salary=500)
     )
     session.execute(stmt)
     session.commit()
@@ -43,16 +45,17 @@ def test_delete():
 
     stmt = (
         delete(TestUser)
-        .where(TestUser.id == 1)
+        .where(TestUser.id == 9)
     )
     session.execute(stmt)
     session.commit()
 
+@secure
 def test_insert():
 
     stmt = insert(TestUser).values([
         {"id": 1, "name": "Anna", "salary": 3000},
-        {"id": 3, "name": "Jonasz", "salary": 5000},
+        {"id": 9, "name": "Marcin", "salary": 5000},
     ])
 
     session.execute(stmt)
@@ -70,7 +73,7 @@ def create():
 def test_update_orm():
     stmt = select(TestUser).where(TestUser.id == 3)
     user = session.execute(stmt).scalar_one()
-    user.name = "Jonasz"
+    user.name = "Jonas"
     session.add(user)
     session.commit()
     stmt = select(TestUser).where(TestUser.id == 8)
@@ -85,7 +88,7 @@ def test_delete_orm():
     user1 = session.execute(stmt).scalar_one()
     session.delete(user1)
     session.commit()
-    stmt = select(TestUser).where(TestUser.id == 2)
+    stmt = select(TestUser).where(TestUser.id == 1)
     user2 = session.execute(stmt).scalar_one()
     session.delete(user2)
     session.commit()
@@ -101,5 +104,5 @@ if __name__ == "__main__":
     session = Session(engine)
     SessionManager.set_session(session)
     BaseManager.set_base(Base)
-    test_update_orm()
+    StrategyManager.use_blacklist()
     test_select()

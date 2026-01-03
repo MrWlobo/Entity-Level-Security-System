@@ -2,8 +2,11 @@ from sqlalchemy.orm import Session
 
 from access_control.access_checker import AccessChecker
 from access_control.permission_resolver import PermissionResolver
+from access_control.strategies.BlacklistStrategy import BlacklistStrategy
 from configuration.db_schema import User
-from .context import _current_user, _current_session, _current_base, _filters_activated
+from utils.patterns.strategy import Strategy
+from .context import _current_user, _current_session, _current_base, _filters_activated, _current_strategy
+
 
 class CurrentUserContext:
 
@@ -54,21 +57,21 @@ class SessionManager:
         for obj in list(session.dirty):
             cls = str(type(obj))
             ids = PermissionResolver.get_accessible_row_ids(current_user.id, cls, "UPDATE")
-            if hasattr(obj, "id") and obj.id not in ids:
+            if hasattr(obj, "id") and not StrategyManager.get_strategy().apply(obj.id in ids):
                 session.expunge(obj)
 
         # DELETE
         for obj in list(session.deleted):
             cls = str(type(obj))
             ids = PermissionResolver.get_accessible_row_ids(current_user.id, cls, "DELETE")
-            if hasattr(obj, "id") and obj.id not in ids:
+            if hasattr(obj, "id") and not StrategyManager.get_strategy().apply(obj.id in ids):
                 session.expunge(obj)
 
         # INSERT
         for obj in list(session.new):
             cls = str(type(obj))
             can_insert = AccessChecker.can_insert(current_user.id, cls)
-            if hasattr(obj, "id") and not can_insert:
+            if hasattr(obj, "id") and not StrategyManager.get_strategy().apply(can_insert):
                 session.expunge(obj)
 
 class BaseManager:
@@ -80,3 +83,17 @@ class BaseManager:
     @staticmethod
     def get_base():
         return _current_base.get()
+
+class StrategyManager:
+
+    @staticmethod
+    def set_strategy(strategy : Strategy):
+        _current_strategy.set(strategy)
+
+    @staticmethod
+    def get_strategy():
+        return _current_strategy.get()
+
+    @staticmethod
+    def use_blacklist():
+        StrategyManager.set_strategy(BlacklistStrategy())

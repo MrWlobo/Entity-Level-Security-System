@@ -6,22 +6,23 @@ from core.context import _filters_activated
 
 class ExecutionHandler:
 
-    """
-        Extracting the code of searched function
-    """
     @staticmethod
     def extract_function(code_str: str, function_name: str) -> str:
+        """
+            Extracting the code of searched function
+        """
         tree = ast.parse(code_str)
         for node in tree.body:
             if isinstance(node, ast.FunctionDef) and node.name == function_name:
                 return astor.to_source(node)
         raise RuntimeError(f"Function {function_name} not found")
 
-    """
-        Creating the new function object with applied filters
-    """
+
     @staticmethod
     def apply_permission_filter(fn : Callable) -> Callable:
+        """
+            Creating the new function object with applied filters
+        """
         with open(fn.__code__.co_filename, "r") as f:
             file_src = f.read()
 
@@ -43,11 +44,12 @@ class ExecutionHandler:
         new_func.__module__ = fn.__module__
 
         def wrapper(*args, **kwargs):
-            try:
-                _filters_activated.set(True)
-                result = new_func(*args, **kwargs)
-                _filters_activated.set(False)
-            except NoResultFound:
-                raise PermissionError("You don't have access to desired rows")
+            """
+                Calling a new function ensuring _filters_activated is set to true,
+                to avoid modifying the session when user set the session but did not use @secure
+            """
+            _filters_activated.set(True)
+            result = new_func(*args, **kwargs)
+            _filters_activated.set(False)
             return result
         return wrapper
