@@ -1,4 +1,3 @@
-from contextvars import ContextVar
 import threading
 from typing import Any
 from access_control.strategies.WhitelistStrategy import WhitelistStrategy
