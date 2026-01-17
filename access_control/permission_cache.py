@@ -1,6 +1,6 @@
-from configuration.db_schema import Version
-from configuration.helpers import get_session
-from utils.patterns.flyweight import FlyweightFactory
+from els.configuration.db_schema import Version
+from els.configuration.helpers import get_session
+from els.utils.patterns.flyweight import FlyweightFactory
 
 
 class PermissionFlyweightFactory(FlyweightFactory):

@@ -1,11 +1,12 @@
 from sqlalchemy import select
-from access_control.permission_cache import PermissionFlyweightFactory
-from access_control.roles.role import RolePlain
-from access_control.roles.role_group import RoleGroup
-from configuration.db_schema import Permission, Role, UserRole
-from configuration.helpers import get_session
 from sqlalchemy.orm import Session
-from utils.patterns.composite import RoleComponent
+
+from els.access_control.permission_cache import PermissionFlyweightFactory
+from els.access_control.roles.role import RolePlain
+from els.access_control.roles.role_group import RoleGroup
+from els.configuration.db_schema import Permission, Role, UserRole
+from els.configuration.helpers import get_session
+from els.utils.patterns.composite import RoleComponent
 
 
 class PermissionResolver:

@@ -1,6 +1,6 @@
 
-from configuration.helpers import get_session
-from db_schema import Role
+from els.configuration.helpers import get_session
+from els.configuration.db_schema import Role
 
 def validate_role_hierarchy():
     """Sprawdza czy role nie tworzą cykli w hierarchii."""

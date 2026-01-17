@@ -1,5 +1,6 @@
 from typing import Callable
-from runtime_modifier.execution_handler import ExecutionHandler
+
+from els.runtime_modifier.execution_handler import ExecutionHandler
 
 
 def secure(fn: Callable):

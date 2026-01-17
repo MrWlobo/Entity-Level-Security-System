@@ -1,7 +1,8 @@
 # configuration/db_schema.py
+from els.configuration.config import Base
+
 from sqlalchemy import CheckConstraint, Column, Integer, String, Boolean, ForeignKey, Text, event, update, insert
 from sqlalchemy.orm import relationship, attributes
-from .config import Base
 
 class User(Base):
     __tablename__ = "users"

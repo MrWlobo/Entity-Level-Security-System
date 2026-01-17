@@ -1,4 +1,4 @@
-from utils.patterns.strategy import Strategy
+from els.utils.patterns.strategy import Strategy
 
 class BlacklistStrategy(Strategy):
     def apply(self, predicate: bool) -> bool:

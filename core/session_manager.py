@@ -1,11 +1,11 @@
 from sqlalchemy.orm import Session
 
-from access_control.access_checker import AccessChecker
-from access_control.permission_resolver import PermissionResolver
-from access_control.strategies.BlacklistStrategy import BlacklistStrategy
-from configuration.db_schema import User
-from utils.patterns.strategy import Strategy
-from .context import _current_user, _current_session, _current_base, _filters_activated, _current_strategy
+from els.access_control.access_checker import AccessChecker
+from els.access_control.permission_resolver import PermissionResolver
+from els.access_control.strategies.BlacklistStrategy import BlacklistStrategy
+from els.configuration.db_schema import User
+from els.utils.patterns.strategy import Strategy
+from els.core.context import _current_user, _current_session, _current_base, _filters_activated, _current_strategy
 
 
 class CurrentUserContext:

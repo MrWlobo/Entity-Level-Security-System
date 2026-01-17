@@ -1,4 +1,4 @@
-from core.context import _current_session
+from els.core.context import _current_session
 
 
 # Required to avoid circular imports

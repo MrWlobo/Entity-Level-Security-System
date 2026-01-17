@@ -1,4 +1,4 @@
-from utils.patterns.composite import RoleComponent
+from els.utils.patterns.composite import RoleComponent
 
 
 class RoleGroup(RoleComponent):

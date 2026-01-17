@@ -1,5 +1,5 @@
-from access_control.permission_cache import PermissionFlyweightFactory
-from access_control.permission_resolver import PermissionResolver
+from els.access_control.permission_cache import PermissionFlyweightFactory
+from els.access_control.permission_resolver import PermissionResolver
 
 
 class AccessChecker:

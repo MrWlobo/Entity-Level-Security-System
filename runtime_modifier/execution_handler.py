@@ -1,32 +1,23 @@
 from typing import Callable
-import ast, astor
-from runtime_modifier.query_modifier import QueryModifier
-from sqlalchemy.orm.exc import NoResultFound
-from core.context import _filters_activated
+import inspect
+import textwrap
+
+from els.runtime_modifier.query_modifier import QueryModifier
+from els.core.context import _filters_activated
 
 class ExecutionHandler:
-
-    @staticmethod
-    def extract_function(code_str: str, function_name: str) -> str:
-        """
-            Extracting the code of searched function
-        """
-        tree = ast.parse(code_str)
-        for node in tree.body:
-            if isinstance(node, ast.FunctionDef) and node.name == function_name:
-                return astor.to_source(node)
-        raise RuntimeError(f"Function {function_name} not found")
-
 
     @staticmethod
     def apply_permission_filter(fn : Callable) -> Callable:
         """
             Creating the new function object with applied filters
         """
-        with open(fn.__code__.co_filename, "r") as f:
-            file_src = f.read()
+        try:
+            func_code = inspect.getsource(fn)
+        except (OSError, TypeError) as e:
+            raise RuntimeError(f"Could not retrieve source code for {fn.__name__}") from e
 
-        func_code = ExecutionHandler.extract_function(file_src, fn.__name__)
+        func_code = textwrap.dedent(func_code)
         func_lines = func_code.splitlines()
 
         while func_lines and func_lines[0].strip().startswith("@"):
@@ -49,7 +40,9 @@ class ExecutionHandler:
                 to avoid modifying the session when user set the session but did not use @secure
             """
             _filters_activated.set(True)
-            result = new_func(*args, **kwargs)
-            _filters_activated.set(False)
+            try:
+                result = new_func(*args, **kwargs)
+            finally:
+                _filters_activated.set(False)
             return result
         return wrapper

@@ -1,7 +1,9 @@
-from access_control.strategies.BlacklistStrategy import BlacklistStrategy
-from configuration.db_schema import User
-from core.session_manager import CurrentUserContext, SessionManager, BaseManager, StrategyManager
-from runtime_modifier.decorator import secure
+from els.access_control.strategies.BlacklistStrategy import BlacklistStrategy
+from els.configuration.db_init import init_db
+from els.configuration.db_schema import User
+from els.core.session_manager import CurrentUserContext, SessionManager, BaseManager, StrategyManager
+from els.runtime_modifier.decorator import secure
+
 from sqlalchemy.orm import Session
 from sqlalchemy import create_engine, Column, Integer, String, Float
 from sqlalchemy.orm import declarative_base
@@ -12,7 +14,7 @@ Base = declarative_base()
 
 
 class TestUser(Base):
-    __tablename__ = "users"
+    __tablename__ = "test_users"
 
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False)
@@ -100,9 +102,14 @@ def test_insert_orm():
     session.commit()
 
 if __name__ == "__main__":
-    CurrentUserContext.set_current_user(User())
     session = Session(engine)
     SessionManager.set_session(session)
+    Base.metadata.create_all(bind=session.bind)
+    init_db()
+    CurrentUserContext.set_current_user(User())
+    # create()
+
     BaseManager.set_base(Base)
     StrategyManager.use_blacklist()
     test_select()
+    # test_insert_orm()

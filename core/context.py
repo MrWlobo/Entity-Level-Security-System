@@ -1,6 +1,6 @@
 from contextvars import ContextVar
 
-from access_control.strategies.WhitelistStrategy import WhitelistStrategy
+from els.access_control.strategies.WhitelistStrategy import WhitelistStrategy
 
 
 _current_user = ContextVar("els_current_user", default=None)

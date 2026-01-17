@@ -1,6 +1,6 @@
 
-from configuration.db_schema import User, Role, Permission, UserRole
-from configuration.helpers import get_session
+from els.configuration.db_schema import User, Role, Permission, UserRole
+from els.configuration.helpers import get_session
 
 class UserManager:
     def create_user(self, username, password_hash, email):
