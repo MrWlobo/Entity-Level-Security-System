@@ -5,6 +5,9 @@ import textwrap
 from els.runtime_modifier.query_modifier import QueryModifier
 from els.core.context import _filters_activated
 
+from els.core.session_manager import SessionManager
+
+
 class ExecutionHandler:
 
     @staticmethod
@@ -35,14 +38,15 @@ class ExecutionHandler:
         new_func.__module__ = fn.__module__
 
         def wrapper(*args, **kwargs):
-            """
-                Calling a new function ensuring _filters_activated is set to true,
-                to avoid modifying the session when user set the session but did not use @secure
-            """
-            _filters_activated.set(True)
+            session = SessionManager.get_session()
+            prev = session.info.get('filters_activated', None)
+            session.info['filters_activated'] = True
             try:
                 result = new_func(*args, **kwargs)
             finally:
-                _filters_activated.set(False)
+                if prev is None:
+                    session.info.pop('filters_activated')
+                else:
+                    session.info['filters_activated'] = prev
             return result
         return wrapper

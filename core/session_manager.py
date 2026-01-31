@@ -31,14 +31,15 @@ class SessionManager:
     """
     @staticmethod
     def modify_session():
+        print("Session Modify started")
         session = SessionManager.get_session()
         session.autoflush = False
         original_commit = session.commit
 
         def modified_commit():
-            if _filters_activated.get(): SessionManager.check_changes_before_commit(session)
-            original_commit()
-
+            if session.info.get('filters_activated', False):
+                SessionManager.check_changes_before_commit(session)
+            return original_commit()
         session.commit = modified_commit
 
 
@@ -55,21 +56,21 @@ class SessionManager:
 
         # UPDATE
         for obj in list(session.dirty):
-            cls = str(type(obj))
+            cls = type(obj).__name__
             ids = PermissionResolver.get_accessible_row_ids(current_user.id, cls, "UPDATE")
             if hasattr(obj, "id") and not StrategyManager.get_strategy().apply(obj.id in ids):
                 session.expunge(obj)
 
         # DELETE
         for obj in list(session.deleted):
-            cls = str(type(obj))
+            cls = type(obj).__name__
             ids = PermissionResolver.get_accessible_row_ids(current_user.id, cls, "DELETE")
             if hasattr(obj, "id") and not StrategyManager.get_strategy().apply(obj.id in ids):
                 session.expunge(obj)
 
         # INSERT
         for obj in list(session.new):
-            cls = str(type(obj))
+            cls = type(obj).__name__
             can_insert = AccessChecker.can_insert(current_user.id, cls)
             if hasattr(obj, "id") and not StrategyManager.get_strategy().apply(can_insert):
                 session.expunge(obj)
