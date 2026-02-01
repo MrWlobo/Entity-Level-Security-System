@@ -1,3 +1,4 @@
+# els/access_control/permission_resolver.py
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -99,7 +100,6 @@ class PermissionResolver:
         child_ids = children_map.get(role_id, [])
         role_perms = perm_map.get(role_id)
 
-        # RoleGroup
         if child_ids:
             group = RoleGroup(role_id, action)
 
@@ -117,7 +117,6 @@ class PermissionResolver:
                 child_node.set_parent(group)
             
             return group
-        # RolePlain
         else:
             plain = RolePlain(role_id, action)
             if role_perms:
@@ -179,10 +178,22 @@ class PermissionResolver:
             )
         )
         rows = session.execute(stmt).all()
-        return {
-            row.role_id: {'row_ids': row.row_ids} 
-            for row in rows
-        }
+        
+        perm_map = {}
+        for row in rows:
+            rid = row.role_id
+            current_ids = row.row_ids or ""
+            
+            if rid not in perm_map:
+                perm_map[rid] = {'row_ids': current_ids}
+            else:
+                existing_ids = perm_map[rid]['row_ids']
+                if existing_ids and current_ids:
+                    perm_map[rid]['row_ids'] = f"{existing_ids},{current_ids}"
+                elif current_ids:
+                    perm_map[rid]['row_ids'] = current_ids
+                    
+        return perm_map
 
     @staticmethod
     def _fetch_role_hierarchy(session: Session, user_id: int) -> dict[int, list[int]]:

@@ -1,8 +1,9 @@
-# configuration/db_schema.py
+# els/configuration/db_schema.py
 from els.configuration.config import Base
 
-from sqlalchemy import CheckConstraint, Column, Integer, String, Boolean, ForeignKey, Text, event, update, insert
+from sqlalchemy import CheckConstraint, Column, Integer, String, Boolean, ForeignKey, Text, event, update, insert, select, literal
 from sqlalchemy.orm import relationship, attributes
+
 
 class User(Base):
     __tablename__ = "users"
@@ -77,30 +78,78 @@ def bump_version_for_user(connection, user_id):
         )
 
 
+def bump_users_with_role(connection, role_id):
+    """
+    Invalidates cache for all users who possess this role OR any parent role 
+    that inherits from this role.
+    """
+    if role_id is None:
+        return
+
+    roles_table = Role.__table__
+
+    hierarchy = (
+        select(roles_table.c.id, roles_table.c.parent_role_id)
+        .where(roles_table.c.id == role_id)
+        .cte(name="role_ancestry", recursive=True)
+    )
+    
+    role_alias = roles_table.alias()
+    hierarchy = hierarchy.union_all(
+        select(role_alias.c.id, role_alias.c.parent_role_id)
+        .join(hierarchy, role_alias.c.id == hierarchy.c.parent_role_id)
+    )
+
+    stmt = (
+        update(Version)
+        .where(
+            Version.user_id.in_(
+                select(UserRole.user_id)
+                .join(hierarchy, UserRole.role_id == hierarchy.c.id)
+            )
+        )
+        .values(version=Version.version + 1)
+    )
+    connection.execute(stmt)
+
+
 @event.listens_for(Permission, 'after_insert')
 @event.listens_for(Permission, 'after_delete')
 def receive_change(mapper, connection, target):
     """
     Listens for new or deleted permissions.
-    Target is the Permission instance being inserted/deleted.
     """
-    bump_version_for_user(connection, target.user_id)
+    if target.user_id:
+        bump_version_for_user(connection, target.user_id)
+    
+    if target.role_id:
+        bump_users_with_role(connection, target.role_id)
 
 
 @event.listens_for(Permission, 'after_update')
 def receive_update(mapper, connection, target):
     """
     Listens for updates to existing permissions.
-    Handles the edge case where a permission might be reassigned to a different user.
     """
-    bump_version_for_user(connection, target.user_id)
+    history_user = attributes.get_history(target, 'user_id')
+    if history_user.has_changes():
+        if target.user_id:
+            bump_version_for_user(connection, target.user_id)
+        if history_user.deleted and history_user.deleted[0]:
+            bump_version_for_user(connection, history_user.deleted[0])
 
-    history = attributes.get_history(target, 'user_id')
-    
-    if history.deleted:
-        old_user_id = history.deleted[0]
-        if old_user_id != target.user_id:
-            bump_version_for_user(connection, old_user_id)
+    history_role = attributes.get_history(target, 'role_id')
+    if history_role.has_changes():
+        if target.role_id:
+            bump_users_with_role(connection, target.role_id)
+        if history_role.deleted and history_role.deleted[0]:
+            bump_users_with_role(connection, history_role.deleted[0])
+            
+    if not history_user.has_changes() and not history_role.has_changes():
+        if target.user_id:
+            bump_version_for_user(connection, target.user_id)
+        if target.role_id:
+            bump_users_with_role(connection, target.role_id)
 
 
 @event.listens_for(UserRole, 'after_insert')
@@ -108,19 +157,14 @@ def receive_update(mapper, connection, target):
 def receive_user_role_change(mapper, connection, target):
     """
     Bumps the user version when a role is assigned or revoked.
-    Target is the UserRole instance.
     """
     bump_version_for_user(connection, target.user_id)
 
 
 @event.listens_for(UserRole, 'after_update')
 def receive_user_role_update(mapper, connection, target):
-    """
-    Handle edge case if a UserRole row is updated (rare, but safe to handle).
-    """
     bump_version_for_user(connection, target.user_id)
     
-    # If the user_id itself changed (e.g. reassigning a role entry to another user)
     history = attributes.get_history(target, 'user_id')
     if history.deleted:
         old_user_id = history.deleted[0]
@@ -131,8 +175,7 @@ def receive_user_role_update(mapper, connection, target):
 @event.listens_for(User, 'after_insert')
 def create_initial_version(mapper, connection, target):
     """
-    When a User is created, automatically create their Version row
-    starting at 1.
+    When a User is created, automatically create their Version row.
     """
     connection.execute(
         insert(Version).values(user_id=target.id, version=1)
